@@ -321,12 +321,31 @@ import { Container, Alert, Spinner } from 'react-bootstrap'
 import UserList from './components/UserList'
 import SearchBar from './components/SearchBar'
 import UserModal from './components/UserModal'
+import {useState, useEffect} from 'react'
+
+const [users, setUsers] = useState([]);
+const [filteredUsers, setFilteredUsers] = useState([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+const [searchTerm, setSearchTerm] = useState('');
+const [showModal, setShowModal] = useState(false);
+const [selectedUser, setSelectedUser] = useState(null);
 
 function App() {
   const [users, setUsers] = useState([])
 
-  useEffect(() => {
-    {/*API fetch logic*/}
+  useEffect(async () => {
+   try {
+    setLoading(true);
+    const response = fetch('https://jsonplaceholder.typicode.com/users');
+    const data = await response.json();
+    setUsers(data);
+   } catch (err) {
+      setError(err.message);
+   } finally {
+      setLoading(false);
+   }
+
 
   }, [])
 
@@ -355,7 +374,7 @@ function App() {
         <UserModal />
       </Container>
 
-      <footer className="py-3 mb-4 mt-5">
+      <footer className="py-3 mb-4 mt-5 bg-light">
         <Container>
           <p className="text-center text-muted mb-0">
             &copy; 2024 User Management Dashboard
