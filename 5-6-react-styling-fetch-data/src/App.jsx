@@ -321,38 +321,64 @@ import { Container, Alert, Spinner } from 'react-bootstrap'
 import UserList from './components/UserList'
 import SearchBar from './components/SearchBar'
 import UserModal from './components/UserModal'
-import {useState, useEffect} from 'react'
-
-const [users, setUsers] = useState([]);
-const [filteredUsers, setFilteredUsers] = useState([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
-const [searchTerm, setSearchTerm] = useState('');
-const [showModal, setShowModal] = useState(false);
-const [selectedUser, setSelectedUser] = useState(null);
 
 function App() {
   const [users, setUsers] = useState([])
+  const [filteredUsers, setFilteredUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
 
-  useEffect(async () => {
-   try {
-    setLoading(true);
-    const response = fetch('https://jsonplaceholder.typicode.com/users');
-    const data = await response.json();
-    setUsers(data);
-   } catch (err) {
-      setError(err.message);
-   } finally {
-      setLoading(false);
-   }
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
+        const response = await fetch(
+          'https://jsonplaceholder.typicode.com/users'
+        )
 
+        if (!response.ok) {
+          throw new Error('Unable to load users. Please try again.')
+        }
+
+        const data = await response.json()
+        setUsers(data)
+        setFilteredUsers(data)
+      } catch (err) {
+        setError(err.message || 'An unexpected error occurred.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
   }, [])
 
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredUsers(users)
+      return
+    }
+
+    const filtered = users.filter((user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    setFilteredUsers(filtered)
+  }, [searchTerm, users])
+
   const handleUserClick = (user) => {
+    setSelectedUser(user)
+    setShowModal(true)
   }
 
   const handleCloseModal = () => {
+    setShowModal(false)
+    setSelectedUser(null)
   }
 
   return (
@@ -365,13 +391,33 @@ function App() {
       </header>
 
       <Container className="py-3 mb-4 mt-5">
-        <SearchBar />
+        <SearchBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
 
-        {/* {loading && <Spinner ... />} */}
-        {/* {error && <Alert ...>{error}</Alert>} */}
-        {/* <UserList users={filteredUsers} onUserClick={handleUserClick} /> */}
+        {loading && (
+          <div className="text-center my-4">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          </div>
+        )}
 
-        <UserModal />
+        {error && <Alert variant="danger">{error}</Alert>}
+
+        {!loading && !error && (
+          <UserList
+            users={filteredUsers}
+            onUserClick={handleUserClick}
+          />
+        )}
+
+        <UserModal
+          show={showModal}
+          user={selectedUser}
+          onHide={handleCloseModal}
+        />
       </Container>
 
       <footer className="py-3 mb-4 mt-5 bg-light">
